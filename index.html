@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coral Launcher</title>
+<meta name="description" content="Coral is a keyboard-first launcher and AI overlay for Linux, with more platforms coming soon: apps, files, calculator, clipboard, translation, screenshots and chat behind one shortcut.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Figtree:wght@400;500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --night: #0d0a0b;
+  --panel: #171214;
+  --raised: #221b1e;
+  --ink: #f4f4f5;
+  --dim: #aaa3a6;
+  --line: rgba(255, 255, 255, 0.1);
+  --accent: #ff6363;
+  --lagoon: #3fd1be;
+  --grain: 0;
+  --sheet-opacity: 0.74;
+  --display: 'Bricolage Grotesque', 'Cantarell', system-ui, sans-serif;
+  --body: 'Figtree', 'Cantarell', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 2.2 0 0 0 -0.75'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; margin: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--night); color: var(--ink); font: 400 17px/1.55 var(--body); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+a { color: inherit; }
+button, input { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--lagoon); outline-offset: 2px; }
+svg.icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.wrap { width: min(1120px, 100% - 40px); margin-inline: auto; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; }
+h2 { font-size: clamp(2.1rem, 5vw, 3.7rem); line-height: 1; font-weight: 800; letter-spacing: -0.03em; }
+h3 { font-size: 1.35rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
+p { color: var(--dim); max-width: 60ch; }
+code, kbd { font-family: var(--mono); font-size: 0.86em; }
+
+kbd.cap { display: inline-block; padding: 0.02em 0.42em 0.08em; border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 0.2em; background: var(--raised); color: var(--ink); }
+
+.top { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 20px; }
+.brand { display: flex; align-items: center; gap: 10px; font: 800 1.2rem var(--display); text-decoration: none; }
+.brand i { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); box-shadow: 10px 0 0 -2px var(--lagoon); margin-right: 8px; }
+.top nav { display: flex; gap: 22px; font-size: 0.95rem; color: var(--dim); }
+.top nav a { text-decoration: none; }
+.top nav a:hover { color: var(--ink); }
+
+.hero { padding-block: clamp(20px, 5vw, 56px) 0; }
+.hero h1 { font-size: clamp(3rem, 10.4vw, 8.4rem); line-height: 0.92; font-weight: 800; letter-spacing: -0.045em; }
+.hero h1 kbd { font-size: 0.62em; font-weight: 500; letter-spacing: -0.04em; color: var(--accent); vertical-align: 0.08em; white-space: nowrap; }
+.hero .lede { margin-top: 22px; font-size: clamp(1.05rem, 2vw, 1.3rem); }
+
+.desk { position: relative; margin-top: 36px; min-height: 340px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 24px 16px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: radial-gradient(90% 90% at 12% 8%, #6d3a45, transparent 60%), radial-gradient(80% 90% at 92% 88%, #1d5f61, transparent 62%), #1b1a20; }
+.desk::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.12) 45%, transparent 75%); }
+.desk[data-position="top"] { justify-content: flex-start; }
+.desk[data-position="center"] { justify-content: center; }
+
+.coral { --ink: #f4f4f5; --ink-dim: rgba(244, 244, 245, 0.58); font: 400 13px/normal 'Inter', 'Cantarell', system-ui, sans-serif; color: var(--ink); text-align: left; }
+.coral svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.coral button { padding: 0; }
+.sheet { position: relative; width: min(640px, 100%); border-radius: 12px; isolation: isolate; overflow: hidden; background: linear-gradient(180deg, rgb(34 34 37 / var(--sheet-opacity)), rgb(20 20 22 / min(1, calc(var(--sheet-opacity) + 0.06)))); backdrop-filter: blur(40px) saturate(1.5); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.7), 0 12px 40px rgba(0, 0, 0, 0.35), 0 24px 70px rgba(0, 0, 0, 0.35); }
+.sheet.solid { background: linear-gradient(180deg, #222225, #141416); backdrop-filter: none; }
+.sheet::after { content: ''; position: absolute; inset: 0; background: var(--noise); background-size: 240px; opacity: calc(var(--grain) * 0.32); pointer-events: none; }
+.coral .greeting { padding: 12px 16px 10px; font-size: 13px; font-weight: 500; }
+.coral .chips { display: flex; align-items: center; gap: 6px; padding: 0 16px 10px; overflow-x: auto; scrollbar-width: none; }
+.coral .chip { flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 7px; background: rgba(255, 255, 255, 0.05); border: 0; font-size: 12px; font-weight: 500; color: rgba(244, 244, 245, 0.85); }
+.coral .chip:hover { background: rgba(255, 255, 255, 0.11); color: #fff; }
+.coral .chip svg { width: 13px; height: 13px; }
+.coral .results { display: flex; flex-direction: column; gap: 2px; padding: 6px 6px 8px; list-style: none; }
+.coral .app-row { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 10px; border-radius: 8px; cursor: pointer; }
+.coral .app-row[aria-selected="true"] { background: rgba(255, 255, 255, 0.09); }
+.coral .app-icon { display: grid; flex: none; place-items: center; width: 24px; height: 24px; color: var(--ink-dim); }
+.coral .app-icon svg { width: 16px; height: 16px; }
+.coral .tile { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; color: #fff; }
+.coral .tile svg { width: 14px; height: 14px; }
+.coral .app-name { flex: none; font-weight: 500; }
+.coral .app-description { flex: 1; min-width: 0; overflow: hidden; font-size: 12.5px; color: var(--ink-dim); text-overflow: ellipsis; white-space: nowrap; }
+.coral .app-kind { flex: none; margin-left: auto; font-size: 12px; color: var(--ink-dim); }
+.coral .composer { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 12px; border-top: 1px solid rgba(255, 255, 255, 0.07); }
+.coral .composer:focus-within { box-shadow: none; border-radius: 0; }
+.coral .plus { display: grid; place-items: center; flex: none; width: 28px; height: 28px; margin-left: -4px; color: var(--ink-dim); }
+.coral .plus svg { width: 16px; height: 16px; stroke-width: 1.8; }
+.coral .composer input, .coral .fake-input { flex: 1; min-width: 0; padding: 6px 2px; font: inherit; font-size: 15px; color: var(--ink); background: none; border: 0; outline: 0; caret-color: var(--accent); }
+.coral .composer input::placeholder, .coral .fake-input { color: rgba(244, 244, 245, 0.42); }
+.coral .calc-result { flex: none; max-width: 45%; overflow: hidden; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; background: rgba(255, 255, 255, 0.08); }
+.coral .calc-result[hidden] { display: none; }
+.coral .send { display: inline-flex; flex: none; align-items: center; gap: 8px; height: 28px; padding: 0 3px 0 8px; font-size: 12px; font-weight: 500; color: var(--ink-dim); }
+.coral .send-key { display: grid; place-items: center; width: 22px; height: 20px; border: 1px solid rgba(255, 255, 255, 0.26); border-radius: 5px; }
+.coral .send-key svg { width: 12px; height: 12px; }
+.coral .footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 10px; height: 36px; background: rgba(0, 0, 0, 0.22); border-top: 1px solid rgba(255, 255, 255, 0.07); font-size: 12px; font-weight: 500; color: var(--ink-dim); }
+.coral .footer-left { display: flex; align-items: center; gap: 4px; }
+.coral .small-icon { display: grid; place-items: center; width: 24px; height: 24px; }
+.coral .small-icon svg { width: 14px; height: 14px; }
+.coral .footer-action { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); white-space: nowrap; }
+.coral kbd { display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 5px; font: inherit; font-size: 11px; background: rgba(255, 255, 255, 0.09); border-radius: 5px; }
+.coral .view-head { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+.coral .back { display: grid; flex: none; place-items: center; width: 28px; height: 28px; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 8px; }
+.coral .back svg { width: 15px; height: 15px; }
+.coral .view-action, .coral .lang-select { display: inline-flex; flex: none; align-items: center; height: 28px; padding: 0 10px; border-radius: 8px; font-size: 12.5px; font-weight: 500; color: var(--ink-dim); background: rgba(255, 255, 255, 0.06); white-space: nowrap; }
+.coral .lang-select { color: var(--ink); gap: 6px; }
+.coral .lang-select svg { width: 12px; height: 12px; stroke: #a1a1a6; }
+.coral .lang-bar { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.coral .split { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); height: 240px; }
+.coral .clip-list { padding: 6px; overflow: hidden; }
+.coral .clip-heading { padding: 8px 8px 4px; font-size: 12px; font-weight: 600; color: var(--ink-dim); }
+.coral .clip-row { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 8px; border-radius: 8px; }
+.coral .selected { background: rgba(255, 255, 255, 0.09); }
+.coral .kind { display: grid; flex: none; place-items: center; width: 20px; height: 20px; border-radius: 5px; color: var(--ink-dim); overflow: hidden; }
+.coral .kind svg { width: 15px; height: 15px; }
+.coral .kind i { width: 100%; height: 100%; background: linear-gradient(135deg, #ff6363, #3fd1be); }
+.coral .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.coral .pin { flex: none; width: 12px; height: 12px; color: var(--ink-dim); }
+.coral .preview { display: flex; flex-direction: column; min-width: 0; background: rgba(0, 0, 0, 0.16); border-left: 1px solid rgba(255, 255, 255, 0.07); }
+.coral .clip-content { flex: 1; padding: 14px 16px; line-height: 1.5; overflow: hidden; overflow-wrap: anywhere; }
+.coral .clip-info { padding: 10px 16px 12px; border-top: 1px solid rgba(255, 255, 255, 0.07); font-size: 12px; }
+.coral .clip-info h4 { margin-bottom: 6px; font-weight: 600; color: var(--ink-dim); }
+.coral .clip-info div { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+.coral .clip-info div span:first-child { color: var(--ink-dim); }
+.coral .tr-body { display: grid; grid-template-columns: 1fr 1fr; height: 180px; }
+.coral .tr-col { padding: 14px 16px; font-size: 15px; line-height: 1.5; color: rgba(244, 244, 245, 0.42); }
+.coral .tr-col + .tr-col { background: rgba(0, 0, 0, 0.16); border-left: 1px solid rgba(255, 255, 255, 0.07); }
+.coral .note-row { display: flex; flex-direction: column; justify-content: center; gap: 2px; height: 46px; padding: 0 10px; border-radius: 8px; }
+.coral .note-time { font-size: 11.5px; color: var(--ink-dim); }
+.coral .note-text { padding: 14px 16px; font-size: 13.5px; line-height: 1.55; background: rgba(0, 0, 0, 0.16); border-left: 1px solid rgba(255, 255, 255, 0.07); white-space: pre-line; }
+.coral .emoji-tabs { display: flex; gap: 2px; padding: 6px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); overflow: hidden; }
+.coral .emoji-tabs span { display: grid; flex: none; place-items: center; width: 30px; height: 28px; border-radius: 7px; font-size: 15px; opacity: 0.55; }
+.coral .emoji-tabs span:first-child { background: rgba(255, 255, 255, 0.09); opacity: 1; }
+.coral .emoji-title { padding: 10px 16px 6px; font-size: 12px; font-weight: 600; color: var(--ink-dim); }
+.coral .emoji-cells { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 2px; padding: 0 12px 12px; }
+.coral .emoji-cells span { display: grid; place-items: center; height: 38px; border-radius: 8px; font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; font-size: 22px; }
+.coral .emoji-cells span:first-child { background: rgba(255, 255, 255, 0.11); }
+
+.feature { display: grid; grid-template-columns: 4fr 7fr; gap: 40px; align-items: center; padding-block: 36px; border-top: 1px solid var(--line); }
+.feature h3 { margin-bottom: 10px; }
+.feature p { font-size: 0.98rem; }
+.stagebox { display: flex; justify-content: center; min-width: 0; padding: 22px; border-radius: 14px; background: radial-gradient(90% 100% at 10% 0%, #6d3a45, transparent 60%), radial-gradient(80% 100% at 95% 100%, #1d5f61, transparent 62%), #1b1a20; }
+
+.screen { position: relative; width: 100%; min-height: 300px; padding: 20px 20px 74px; border-radius: 8px; background: #efe9e2; color: #241c1c; overflow: hidden; }
+.screen b { display: inline-block; font: 800 1.45rem/1.15 var(--display); padding: 0 3px; background: #efe9e2; border-radius: 4px; box-shadow: 0 0 5px 3px #efe9e2; }
+.screen p { color: #241c1c; font-size: 0.92rem; margin-top: 12px; }
+.lens-bar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; width: max-content; max-width: calc(100% - 16px); padding: 7px 7px 7px 18px; border-radius: 999px; background: rgba(16, 15, 19, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4); }
+.lens-bar .status { color: var(--ink-dim); white-space: nowrap; }
+.lens-btn { padding: 8px 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); white-space: nowrap; }
+.lens-x { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; flex: none; border-radius: 50%; background: rgba(255, 255, 255, 0.08); }
+.lens-x svg { width: 15px; height: 15px; }
+
+.editor { width: 100%; border-radius: 10px; overflow: hidden; background: #0d0a0b; border: 1px solid rgba(255, 255, 255, 0.08); }
+.toolbar { display: flex; align-items: center; gap: 6px; height: 56px; padding: 0 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); overflow-x: auto; scrollbar-width: none; }
+.group { display: flex; flex: none; align-items: center; gap: 2px; padding-right: 6px; margin-right: 2px; border-right: 1px solid rgba(255, 255, 255, 0.08); }
+.group:last-child { padding-right: 0; margin-right: 0; border-right: 0; }
+.spacer { flex: 1; }
+.tb { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; color: var(--ink-dim); }
+.tb svg { stroke-width: 1.8; }
+.tb.active { color: var(--ink); background: rgba(255, 99, 99, 0.2); }
+.tb.label { width: auto; padding: 0 12px; font-weight: 500; color: var(--ink); }
+.tb.primary { min-width: 68px; color: #fff; background: var(--accent); }
+.tb i { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.25); }
+.coral svg.shot { display: block; width: 100%; height: auto; padding: 12px; }
+.lens-bar { color: #f4f4f5; }
+.coral .fake-input { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.try { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; font-size: 0.9rem; color: var(--dim); }
+.try button { padding: 3px 10px; border-radius: 7px; background: var(--panel); border: 1px solid var(--line); font: 400 0.82rem var(--mono); color: var(--ink); }
+.try button:hover { border-color: var(--accent); }
+.note { font-size: 0.82rem; color: var(--dim); margin-top: 8px; }
+
+section { padding-block: clamp(64px, 10vw, 116px) 0; }
+.head { display: grid; gap: 16px; margin-bottom: 40px; }
+.head p { font-size: 1.1rem; }
+
+.providers { display: grid; border-top: 1px solid var(--line); }
+.provider { display: grid; grid-template-columns: 3fr 5fr 3fr; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.provider h3 { font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 800; }
+.provider p { font-size: 0.98rem; }
+.provider code { color: var(--lagoon); font-size: 0.8rem; overflow-wrap: anywhere; }
+.extras { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+.extras span { padding: 4px 11px; border-radius: 99px; border: 1px solid var(--line); font-size: 0.88rem; color: var(--dim); }
+
+.studio { display: grid; grid-template-columns: 3fr 8fr; gap: 28px; align-items: stretch; }
+.controls { display: grid; gap: 20px; align-content: start; }
+.controls label, .controls .label { display: grid; gap: 7px; font-size: 0.9rem; color: var(--dim); }
+.swatches { display: flex; gap: 8px; }
+.swatches button { width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent; }
+.swatches button[aria-pressed="true"] { border-color: var(--ink); }
+.seg { display: flex; width: fit-content; border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+.seg button { padding: 4px 13px; border-radius: 7px; font-size: 0.88rem; color: var(--dim); }
+.seg button[aria-pressed="true"] { background: var(--raised); color: var(--ink); }
+input[type="range"] { accent-color: var(--accent); width: 100%; }
+.studio .desk { margin: 0; min-height: 390px; }
+
+pre { padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); font: 400 0.9rem/1.8 var(--mono); overflow-x: auto; }
+pre span { color: var(--accent); user-select: none; }
+.downloads { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 28px; }
+.dl { display: grid; gap: 4px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--ink); text-decoration: none; transition: border-color 0.15s; }
+.dl:hover, .dl:focus-visible { border-color: var(--accent); }
+.dl b { font-size: 1.05rem; }
+.dl span { color: var(--dim); font-size: 0.88rem; }
+.dl.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.dl.primary span { color: rgba(255, 255, 255, 0.85); }
+.dl code { font: 400 0.82rem var(--mono); color: var(--ink); overflow-wrap: anywhere; }
+footer { margin-top: clamp(64px, 10vw, 116px); padding-block: 22px; border-top: 1px solid var(--line); color: var(--dim); font-size: 0.88rem; }
+
+@media (max-width: 800px) {
+  .feature, .studio { grid-template-columns: 1fr; gap: 20px; }
+  .downloads { grid-template-columns: 1fr 1fr; }
+  .stagebox { padding: 10px; }
+  .lens-bar .status, .coral .send-label, .coral .app-description, .coral .view-action { display: none; }
+  .provider { grid-template-columns: 1fr; gap: 6px; }
+  .top nav { display: none; }
+  .desk { min-height: 400px; padding-inline: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#start"><i></i>Coral</a>
+    <nav aria-label="Sections">
+      <a href="#tools">Tools</a>
+      <a href="#ai">AI</a>
+      <a href="#yours">Customize</a>
+      <a href="#download">Download</a>
+    </nav>
+  </header>
+
+  <main id="start">
+    <div class="hero">
+      <h1>Press <kbd class="cap">Ctrl+Alt+Space</kbd> and just type.</h1>
+      <p class="lede">Coral is a launcher and AI overlay for Linux, with more platforms coming soon. Apps, files, sums, your clipboard, translation, screenshots and chat all live behind one shortcut, then get out of your way.</p>
+
+      <div class="desk" data-position="bottom">
+        <div class="sheet coral">
+          <div id="demoBody" aria-live="polite"></div>
+          <div class="composer">
+            <span class="plus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+            <input id="demoInput" type="text" placeholder="Ask Coral" aria-label="Try the Coral launcher" spellcheck="false" autocomplete="off">
+            <output id="demoCalc" class="calc-result" hidden></output>
+            <span class="send"><span class="send-label">Send</span><span class="send-key"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 5v6a3 3 0 0 1-3 3H5m0 0 4-4m-4 4 4 4"/></svg></span></span>
+          </div>
+          <div class="footer"><div class="footer-left"><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5M12 7v5l3 2"/></svg></span><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></span></div></div>
+        </div>
+      </div>
+      <div class="try">
+        <span>This launcher is live. Try:</span>
+        <button type="button" data-try="24 km in miles">24 km in miles</button>
+        <button type="button" data-try="20% of 340">20% of 340</button>
+        <button type="button" data-try="100 eur in usd">100 eur in usd</button>
+        <button type="button" data-try="130 days ago">130 days ago</button>
+        <button type="button" data-try="5pm pst in tokyo">5pm pst in tokyo</button>
+        <button type="button" data-try="100 + 20%">100 + 20%</button>
+        <button type="button" data-try="$5k in eur">$5k in eur</button>
+        <button type="button" data-try="255 in hex">255 in hex</button>
+        <button type="button" data-try="fi">fi</button>
+        <button type="button" data-try="cb">cb</button>
+        <button type="button" data-try="invoice">invoice</button>
+      </div>
+      <p class="note">Website demo with sample apps, files and exchange rate. The app searches your own and fetches current rates.</p>
+    </div>
+
+    <section id="tools">
+      <div class="head">
+        <h2>Seven tools, zero extra windows.</h2>
+        <p>Most tools open inside the same sheet. Give the ones you use most their own shortcut and go straight there.</p>
+      </div>
+
+      <article class="feature">
+        <div>
+          <h3>Translate the screen where it stands</h3>
+          <p>Coral reads your screen with on-device OCR, then paints the translation over the original text, matching its colors. Choose the whole screen, an area, or Live mode. Copy text from screen uses the same reader when you only need the words.</p>
+        </div>
+        <div class="stagebox">
+          <div class="screen coral">
+            <b>Please keep the door closed</b>
+            <p><span>The heating is on. Deliveries go to the rear entrance, Monday to Friday until 4 pm.</span></p>
+            <div class="lens-bar">
+              <span class="status">Translated to English</span>
+              <span class="lens-btn">Show original</span>
+              <span class="lens-btn">Copy all</span>
+              <span class="lens-x"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="feature">
+        <div>
+          <h3>Clipboard history</h3>
+          <p>Text and images, up to the limit you set. Pin what matters, filter as you type, and block anything with plain rules or a regular expression. Copies flagged by a password manager are skipped.</p>
+        </div>
+        <div class="stagebox">
+          <div class="sheet coral">
+            <div class="view-head"><span class="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg></span><span class="fake-input">Type to filter entries</span><span class="view-action">Pin</span><span class="view-action">Clear</span><span class="lang-select">All Types <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div>
+            <div class="split">
+              <div class="clip-list">
+                <div class="clip-heading">Pinned</div>
+                <div class="clip-row selected"><span class="kind"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h9l3 3v13H6zM9 11h6M9 15h6"/></svg></span><span class="label">ssh deploy@10.0.4.12</span><svg class="pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v7"/></svg></div>
+                <div class="clip-heading">Recent</div>
+                <div class="clip-row"><span class="kind"><i></i></span><span class="label">Image 1920 × 1080</span></div>
+                <div class="clip-row"><span class="kind"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h9l3 3v13H6zM9 11h6M9 15h6"/></svg></span><span class="label">Meeting moved to 15:30</span></div>
+              </div>
+              <div class="preview">
+                <div class="clip-content">ssh deploy@10.0.4.12</div>
+                <div class="clip-info"><h4>Information</h4><div><span>Content Type</span><span>Text</span></div><div><span>Characters</span><span>20</span></div><div><span>Pinned</span><span>Yes</span></div></div>
+              </div>
+            </div>
+            <div class="footer"><div class="footer-left"><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5M12 7v5l3 2"/></svg></span><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></span></div><span class="footer-action">Copy to Clipboard <kbd>↵</kbd></span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="feature">
+        <div>
+          <h3>Translator</h3>
+          <p>Paste, press Enter, and read it streaming in. Auto-detect the source and choose from 17 languages, swap direction with one click, and copy the result.</p>
+        </div>
+        <div class="stagebox">
+          <div class="sheet coral">
+            <div class="view-head"><span class="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg></span><div class="lang-bar"><span class="lang-select">Auto-detect <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4m4 4H7"/></svg></span><span class="lang-select">English <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div></div>
+            <div class="tr-body"><div class="tr-col">Type or paste text, then press Enter</div><div class="tr-col">Translation</div></div>
+            <div class="footer"><div class="footer-left"><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5M12 7v5l3 2"/></svg></span><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></span></div></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="feature">
+        <div>
+          <h3>Screenshot editor</h3>
+          <p>Coral's own picker opens the capture in an editor with arrows, rectangles, circles, text, freehand and blur. Undo anything, then copy or save.</p>
+        </div>
+        <div class="stagebox">
+          <div class="editor coral">
+            <div class="toolbar">
+              <div class="group">
+                <span class="tb" title="Arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M10 5h9v9"/></svg></span>
+                <span class="tb"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="1"/></svg></span>
+                <span class="tb"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/></svg></span>
+                <span class="tb"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7V5h14v2M12 5v14M9 19h6"/></svg></span>
+                <span class="tb"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-4L16 5l3 3L8 19zM14 7l3 3"/></svg></span>
+                <span class="tb active"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5s6 6.2 6 10.5a6 6 0 0 1-12 0c0-4.3 6-10.5 6-10.5z"/></svg></span>
+              </div>
+              <div class="group"><span class="tb"><i style="background:#ff6363"></i></span><span class="tb"><i style="background:#ffd166"></i></span><span class="tb"><i style="background:#3fd1be"></i></span></div>
+              <div class="spacer"></div>
+              <div class="group"><span class="tb label">Save</span><span class="tb label primary">Copy</span></div>
+            </div>
+            <svg class="shot" viewBox="0 0 480 170" role="img" aria-label="A capture annotated with a rectangle, an arrow and a blurred patch">
+              <defs><filter id="soft"><feGaussianBlur stdDeviation="4"/></filter><marker id="tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 10 5 0 10z" fill="#3fd1be" stroke="none"/></marker></defs>
+              <rect width="480" height="170" rx="4" fill="#222225" stroke="none"/>
+              <g fill="#47474d" stroke="none"><rect x="24" y="26" width="170" height="11" rx="3"/><rect x="24" y="50" width="240" height="8" rx="3"/><rect x="24" y="68" width="210" height="8" rx="3"/><rect x="24" y="86" width="250" height="8" rx="3"/></g>
+              <g filter="url(#soft)" fill="#8a8a92" stroke="none"><rect x="24" y="118" width="150" height="20" rx="3"/></g>
+              <rect x="316" y="28" width="132" height="78" rx="1" fill="none" stroke="#ff6363" stroke-width="3"/>
+              <path d="M268 142C300 142 340 136 370 112" fill="none" stroke="#3fd1be" stroke-width="3" marker-end="url(#tip)"/>
+            </svg>
+          </div>
+        </div>
+      </article>
+
+      <article class="feature">
+        <div>
+          <h3>Notes</h3>
+          <p>Markdown notes one word away from wherever you're working. Format with a toolbar or Ctrl+B and Ctrl+I, tick off checklists right in the preview, filter by #tags, pin what matters and export any note as a Markdown file.</p>
+        </div>
+        <div class="stagebox">
+          <div class="sheet coral">
+            <div class="view-head"><span class="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg></span><span class="fake-input">Search notes</span><span class="view-action">Preview</span><span class="view-action">Pin</span><span class="view-action">New</span></div>
+            <div class="split" style="height:190px">
+              <div class="clip-list"><div class="note-row selected"><span>Reef trip</span><span class="note-time">Pinned · Today</span></div><div class="note-row"><span>Release checklist</span><span class="note-time">Yesterday</span></div></div>
+              <div class="note-text"># Reef trip #travel
+- [x] Book the boat
+- [ ] Charge the camera
+- [ ] Pack **fins**</div>
+            </div>
+            <div class="footer"><div class="footer-left"><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5M12 7v5l3 2"/></svg></span><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></span></div><span class="footer-action">New Note <kbd>Ctrl N</kbd></span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="feature">
+        <div>
+          <h3>Reminders</h3>
+          <p>Type <code>remind me to call mom tomorrow 2pm</code> and press Enter, or ask Coral in chat. Reminders use your local time, arrive as desktop notifications, and live in their own list where you can tick them off.</p>
+        </div>
+        <div class="stagebox">
+          <div class="sheet coral">
+            <div class="view-head"><span class="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg></span><span class="fake-input">Remind me to…</span><span class="view-action">tomorrow 2pm</span><span class="view-action">Add</span></div>
+            <div class="clip-list" style="height:150px">
+              <div class="clip-heading">Upcoming</div>
+              <div class="note-row selected"><span>Call mom</span><span class="note-time">Tomorrow 14:00</span></div>
+              <div class="note-row"><span>Renew the domain</span><span class="note-time">Fri 09:00</span></div>
+            </div>
+            <div class="footer"><div class="footer-left"></div><span class="footer-action">Add Reminder <kbd>↵</kbd></span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="feature">
+        <div>
+          <h3>Emoji</h3>
+          <p>Search by name or browse by category, then press Enter to copy.</p>
+        </div>
+        <div class="stagebox">
+          <div class="sheet coral">
+            <div class="view-head"><span class="back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m0 0 6-6m-6 6 6 6"/></svg></span><span class="fake-input">Search emoji</span></div>
+            <div class="emoji-tabs" aria-hidden="true"><span>😀</span><span>🐙</span><span>🍕</span><span>✈️</span><span>⚽</span><span>💡</span><span>🔣</span></div>
+            <div class="emoji-title">Animals &amp; Nature</div>
+            <div class="emoji-cells" aria-hidden="true"><span>🪸</span><span>🐠</span><span>🐙</span><span>🦀</span><span>🐚</span><span>🦈</span><span>🐳</span><span>🐢</span><span>🦑</span><span>🐬</span><span>🦞</span><span>🐡</span><span>🐟</span><span>🦭</span></div>
+            <div class="footer"><div class="footer-left"><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5M12 7v5l3 2"/></svg></span><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></span></div><span class="footer-action">Copy coral <kbd>↵</kbd></span></div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section id="ai">
+      <div class="head">
+        <h2>Your model. Your call.</h2>
+        <p>AI is optional: choose No AI and Coral stays a fast launcher with notes, reminders, clipboard, emoji and screenshots, with every AI control hidden. Chat, screen questions and translation all go through the provider you choose. Keep several provider profiles and switch from the footer. Press Tab to send anything you typed to chat, and Esc to step back to the launcher without losing the conversation.</p>
+      </div>
+      <div class="providers">
+        <div class="provider">
+          <h3>Local</h3>
+          <p>Download a recommended model in one click, or bring your own GGUF. Coral starts and manages <code>llama-server</code>, adds a vision projector if you have one, and frees the memory after 10 idle minutes by default.</p>
+          <code>llama.cpp · GPU layers · context size</code>
+        </div>
+        <div class="provider">
+          <h3>Custom</h3>
+          <p>Point Coral at any OpenAI-compatible endpoint, hosted or on your own network. The key is optional for local servers. With a cloud service, your messages and screen content go to that provider.</p>
+          <code>https://api.example.com/v1</code>
+        </div>
+      </div>
+      <div class="extras">
+        <span>Attach a screenshot to any question</span>
+        <span>The AI can open apps, files and links and set reminders, after you click Allow</span>
+        <span>Shows its thinking and the tools it used</span>
+        <span>Copy, retry, edit or paste any answer</span>
+        <span>Searchable chat history, exported to Markdown</span>
+        <span>New chat with Ctrl+N</span>
+        <span>Guided first-run setup</span>
+        <span>Saved prompts</span>
+        <span>Custom instructions</span>
+        <span>Markdown and code highlighting</span>
+      </div>
+    </section>
+
+    <section id="yours">
+      <div class="head">
+        <h2>Make it yours.</h2>
+        <p>These are real Coral appearance settings, alongside light and dark themes. Change them here to see how each one looks. Snippets go further: give one arguments and it pastes text, opens a link like <code>gh electron</code>, or runs a script.</p>
+      </div>
+      <div class="studio">
+        <div class="controls">
+          <div class="label">Accent
+            <div class="swatches" id="swatches">
+              <button type="button" data-accent="#ff6363" style="background:#ff6363" aria-label="Coral" aria-pressed="true"></button>
+              <button type="button" data-accent="#3fd1be" style="background:#3fd1be" aria-label="Lagoon" aria-pressed="false"></button>
+              <button type="button" data-accent="#ffb454" style="background:#ffb454" aria-label="Amber" aria-pressed="false"></button>
+              <button type="button" data-accent="#a99bff" style="background:#a99bff" aria-label="Lilac" aria-pressed="false"></button>
+            </div>
+          </div>
+          <div class="label">Position
+            <div class="seg" id="positionSeg">
+              <button type="button" data-value="top" aria-pressed="false">Top</button>
+              <button type="button" data-value="center" aria-pressed="false">Center</button>
+              <button type="button" data-value="bottom" aria-pressed="true">Bottom</button>
+            </div>
+          </div>
+          <div class="label">Background
+            <div class="seg" id="backgroundSeg">
+              <button type="button" data-value="glass" aria-pressed="true">Glass</button>
+              <button type="button" data-value="solid" aria-pressed="false">Solid</button>
+            </div>
+          </div>
+          <label for="grain">Grain <input id="grain" type="range" min="0" max="1" step="0.05" value="0"></label>
+          <label for="opacity">Opacity <input id="opacity" type="range" min="0.3" max="1" step="0.01" value="0.74"></label>
+        </div>
+        <div class="desk" id="previewDesk" data-position="bottom">
+          <div class="sheet coral" id="previewSheet">
+            <div class="greeting">How can I help?</div>
+            <div class="chips" aria-hidden="true"><span class="chip">Translator</span><span class="chip">Emoji</span><span class="chip">Clipboard</span><span class="chip">Notes</span><span class="chip">Screenshot</span></div>
+            <div class="composer" aria-hidden="true"><span class="plus"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="fake-input">Ask Coral</span><span class="send"><span class="send-label">Send</span><span class="send-key"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 5v6a3 3 0 0 1-3 3H5m0 0 4-4m-4 4 4 4"/></svg></span></span></div>
+            <div class="footer"><div class="footer-left"><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5M12 7v5l3 2"/></svg></span><span class="small-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></svg></span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="download">
+      <h2>Download Coral.</h2>
+      <div class="downloads">
+        <a class="dl primary" href="https://github.com/24digitaldev/coral-launcher/releases/latest/download/Coral-x64.AppImage"><b>AppImage</b><span>Any distro. Make it executable and run it.</span></a>
+        <a class="dl" href="https://github.com/24digitaldev/coral-launcher/releases/latest/download/Coral-x64.deb"><b>.deb</b><span>Ubuntu, Debian, Mint, Pop!_OS</span></a>
+        <a class="dl" href="https://github.com/24digitaldev/coral-launcher/releases/latest/download/Coral-x64.rpm"><b>.rpm</b><span>Fedora, openSUSE</span></a>
+        <a class="dl" href="https://aur.archlinux.org/packages/coral-launcher"><b>Arch Linux</b><span>From the AUR, on the system's Electron:</span><code>yay -S coral-launcher</code></a>
+      </div>
+    </section>
+  </main>
+
+  <footer>Coral 0.1.0. Available for Linux today, with more platforms coming soon.</footer>
+</div>
+
+<script>
+(() => {
+  const icon = {
+    translate: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 5h8M8 3v2m-3.5 4c1.4 2.6 3.6 4.3 6 5M11.5 9c-.9 3-3 5.4-6 7M13.5 20l3.5-9 3.5 9m-5.6-2.5h4.2"/></svg>',
+    file: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v4h4"/></svg>',
+    shot: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+    clip: '<svg class="icon" viewBox="0 0 24 24"><rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5a3 3 0 0 1 6 0"/></svg>',
+    note: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 4h14v16H5zM9 9h6M9 13h6"/></svg>',
+    smile: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1.8 2 5.2 2 7 0M9 9.5h.01M15 9.5h.01"/></svg>',
+    screen: '<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>'
+  };
+  const entries = [
+    { name: 'Translator', kind: 'Command', icon: icon.translate },
+    { name: 'Emoji', kind: 'Command', icon: icon.smile },
+    { name: 'Clipboard', kind: 'Command', icon: icon.clip },
+    { name: 'Notes', kind: 'Command', icon: icon.note },
+    { name: 'Screenshot', kind: 'Command', icon: icon.shot },
+    { name: 'Translate screen', kind: 'Command', icon: icon.screen },
+    { name: 'Copy text from screen', kind: 'Command', icon: icon.screen },
+    { name: 'Files', hint: 'Browse your files', kind: 'Application', tile: '#5aa9ff', path: 'M3 7h7l2 2h9v10H3z' },
+    { name: 'Web Browser', hint: 'Browse the web', kind: 'Application', tile: '#ff8a5c', path: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18' },
+    { name: 'Terminal', hint: 'Run commands', kind: 'Application', tile: '#3b3b42', path: 'm5 7 5 5-5 5M12 18h7' },
+    { name: 'Text Editor', hint: 'Edit text files', kind: 'Application', tile: '#3fd1be', path: 'M6 4h12v16H6zM9 9h6M9 13h6' },
+    { name: 'Settings', hint: 'System settings', kind: 'Application', tile: '#77777f', path: 'M4 7h16M4 12h16M4 17h16' },
+    { name: 'invoice-october.pdf', hint: '~/Documents/Work', kind: 'File', icon: icon.file, minLength: 3 },
+    { name: 'invoice-template.odt', hint: '~/Documents', kind: 'File', icon: icon.file, minLength: 3 }
+  ];
+  const units = {
+    length: { mm: 0.001, cm: 0.01, m: 1, km: 1000, in: 0.0254, inch: 0.0254, inches: 0.0254, ft: 0.3048, feet: 0.3048, yd: 0.9144, mi: 1609.344, mile: 1609.344, miles: 1609.344 },
+    mass: { mg: 0.001, g: 1, kg: 1000, t: 1000000, oz: 28.349523125, lb: 453.59237, lbs: 453.59237, pounds: 453.59237 },
+    speed: { 'm/s': 1, 'km/h': 1 / 3.6, kmh: 1 / 3.6, kph: 1 / 3.6, mph: 0.44704, knots: 0.514444 }
+  };
+  const sampleRates = { eur: 1, usd: 1.08, gbp: 0.85, ron: 5.08, chf: 0.94, jpy: 165 };
+
+  const multipliers = { k: 1e3, thousand: 1e3, million: 1e6, bn: 1e9, billion: 1e9, trillion: 1e12 };
+  const moneyNames = { '€': 'eur', euro: 'eur', euros: 'eur', $: 'usd', dollar: 'usd', dollars: 'usd', '£': 'gbp', pound: 'gbp', pounds: 'gbp', '¥': 'jpy', yen: 'jpy', lei: 'ron', franc: 'chf', francs: 'chf' };
+  const zoneNames = { utc: 'UTC', gmt: 'UTC', pst: 'America/Los_Angeles', pdt: 'America/Los_Angeles', mst: 'America/Denver', mdt: 'America/Denver', cst: 'America/Chicago', cdt: 'America/Chicago', est: 'America/New_York', edt: 'America/New_York', bst: 'Europe/London', cet: 'Europe/Paris', cest: 'Europe/Paris', eet: 'Europe/Athens', eest: 'Europe/Athens', ist: 'Asia/Kolkata', jst: 'Asia/Tokyo' };
+
+  const format = (value) => value.toLocaleString('en', { maximumFractionDigits: 6, useGrouping: false });
+
+  function evaluate(source) {
+    const text = source.replace(/×/g, '*').replace(/÷/g, '/').replace(/,/g, '.').replace(/\s+/g, '');
+    let index = 0;
+    const functions = { sqrt: Math.sqrt, sin: Math.sin, cos: Math.cos, tan: Math.tan, log: Math.log10, ln: Math.log };
+    function primary() {
+      if (text[index] === '-') { index++; return -primary(); }
+      if (text[index] === '(') {
+        index++;
+        const value = sum();
+        if (text[index] !== ')') throw new Error('paren');
+        index++;
+        return value;
+      }
+      const word = text.slice(index).match(/^[a-z]+/i);
+      if (word && functions[word[0]]) {
+        index += word[0].length;
+        return functions[word[0]](primary());
+      }
+      const number = text.slice(index).match(/^\d+(\.\d+)?/);
+      if (!number) throw new Error('number');
+      index += number[0].length;
+      const scale = text.slice(index).match(/^(?:k|thousand|million|bn|billion|trillion)/i);
+      if (!scale) return Number(number[0]);
+      index += scale[0].length;
+      return Number(number[0]) * multipliers[scale[0].toLowerCase()];
+    }
+    function power() {
+      const base = primary();
+      if (text[index] !== '^') return base;
+      index++;
+      return base ** power();
+    }
+    function product() {
+      let value = power();
+      while (text[index] === '*' || text[index] === '/') value = text[index++] === '*' ? value * power() : value / power();
+      return value;
+    }
+    function sum() {
+      let value = product();
+      while (text[index] === '+' || text[index] === '-') {
+        const sign = text[index++] === '+' ? 1 : -1;
+        const term = product();
+        if (text[index] === '%') {
+          index++;
+          value += sign * value * term / 100;
+        } else {
+          value += sign * term;
+        }
+      }
+      return value;
+    }
+    try {
+      const value = sum();
+      return index === text.length && Number.isFinite(value) ? value : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function solveDate(source) {
+    const text = source.trim().toLowerCase().replace(/\s+/g, ' ');
+    const now = new Date();
+    const atDay = (days) => new Date(now.getFullYear(), now.getMonth(), now.getDate() + days);
+    const dayName = (date) => date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const named = { today: 0, tomorrow: 1, yesterday: -1 };
+    if (text in named) return { value: dayName(atDay(named[text])), note: 'Date' };
+    const shifted = text.match(/^(\d{1,5}|an?) (day|week|month|year)s? ago$/) ?? text.match(/^in (\d{1,5}|an?) (day|week|month|year)s?$/) ?? text.match(/^(\d{1,5}|an?) (day|week|month|year)s? from (?:now|today)$/);
+    if (shifted) {
+      const count = (/^an?$/.test(shifted[1]) ? 1 : Number(shifted[1])) * (text.endsWith('ago') ? -1 : 1);
+      if (shifted[2] === 'day' || shifted[2] === 'week') return { value: dayName(atDay(shifted[2] === 'day' ? count : count * 7)), note: 'Date' };
+      const first = new Date(now.getFullYear(), now.getMonth() + (shifted[2] === 'month' ? count : count * 12), 1);
+      first.setDate(Math.min(now.getDate(), new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()));
+      return { value: dayName(first), note: 'Date' };
+    }
+    const weekday = text.match(/^(next|last) (sunday|monday|tuesday|wednesday|thursday|friday|saturday)$/);
+    if (weekday) {
+      const target = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].indexOf(weekday[2]);
+      const direction = weekday[1] === 'next' ? 1 : -1;
+      const distance = (direction * (target - now.getDay()) + 7) % 7 || 7;
+      return { value: dayName(atDay(direction * distance)), note: 'Date' };
+    }
+    if (text === 'days until christmas') {
+      const today = atDay(0);
+      const thisYear = new Date(now.getFullYear(), 11, 25);
+      const target = thisYear < today ? new Date(now.getFullYear() + 1, 11, 25) : thisYear;
+      const days = Math.round((Date.UTC(target.getFullYear(), target.getMonth(), target.getDate()) - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000);
+      return { value: `${days} ${days === 1 ? 'day' : 'days'}`, note: 'Date' };
+    }
+    return null;
+  }
+
+  function solveMoney(source) {
+    const match = source.match(/^\s*([€$£¥])?\s*(-?\d+(?:[.,]\d+)?)\s*(k|thousand|million|bn|billion|trillion)?(?![a-z])\s*([a-z€$£¥]+)?\s+(?:(?:in|to|as|=)\s+)?([a-z€$£¥]+)\s*$/i);
+    if (!match) return null;
+    const code = (name) => moneyNames[name.toLowerCase()] ?? name.toLowerCase();
+    const from = code(match[1] ?? match[4] ?? '');
+    const to = code(match[5]);
+    if (!sampleRates[from] || !sampleRates[to]) return null;
+    const amount = Number(match[2].replace(',', '.')) * (match[3] ? multipliers[match[3].toLowerCase()] : 1);
+    return { value: `${(amount / sampleRates[from] * sampleRates[to]).toFixed(2)} ${to.toUpperCase()}`, note: 'Currency, using a sample rate on this page' };
+  }
+
+  function solveBase(source) {
+    const text = source.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (/^(0x[\da-f]+|0b[01]+|0o[0-7]+)$/.test(text)) return { value: BigInt(text).toString(), note: 'Number base' };
+    const match = text.match(/^(\d+|0x[\da-f]+|0b[01]+|0o[0-7]+) (?:in|to|as) ([a-z]+)$/);
+    const radix = match && { hex: 16, hexadecimal: 16, bin: 2, binary: 2, oct: 8, octal: 8, dec: 10, decimal: 10 }[match[2]];
+    if (!radix) return null;
+    return { value: `${{ 16: '0x', 2: '0b', 8: '0o', 10: '' }[radix]}${BigInt(match[1]).toString(radix)}`, note: 'Number base' };
+  }
+
+  function solveUnix(source) {
+    const text = source.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (/^now (?:in|to) unix$/.test(text)) return { value: String(Math.floor(Date.now() / 1000)), note: 'Unix timestamp' };
+    if (!/^(\d{10}|\d{13})$/.test(text)) return null;
+    return { value: new Date(Number(text) * (text.length === 10 ? 1000 : 1)).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }), note: 'Unix timestamp' };
+  }
+
+  function solveZone(source) {
+    const text = source.trim().toLowerCase().replace(/\s+/g, ' ');
+    const zoneOf = (name) => zoneNames[name] ?? Intl.supportedValuesOf('timeZone').find((zone) => zone.split('/').pop().replace(/_/g, ' ').toLowerCase() === name);
+    const label = (name) => name in zoneNames ? name.toUpperCase() : name.replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
+    const show = (date, name) => ({ value: `${date.toLocaleString(undefined, { timeZone: zoneOf(name), weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} (${label(name)})`, note: 'Time zone' });
+    const current = text.match(/^(?:what )?time (?:is it )?in (.+)$/) ?? text.match(/^now in (.+)$/);
+    if (current && zoneOf(current[1])) return show(new Date(), current[1]);
+    const match = text.match(/^(\d{1,2})(?::(\d{2}))? ?(am|pm)?(?: (.+?))? (?:in|to) (.+)$/);
+    if (!match || (!match[2] && !match[3]) || !zoneOf(match[5])) return null;
+    const origin = match[4] ? zoneOf(match[4]) : Intl.DateTimeFormat().resolvedOptions().timeZone;
+    let hours = Number(match[1]);
+    const minutes = Number(match[2] ?? 0);
+    if (!origin || minutes > 59 || hours > 23 || (match[3] && (hours < 1 || hours > 12))) return null;
+    if (match[3]) hours = hours % 12 + (match[3] === 'pm' ? 12 : 0);
+    const offset = (instant) => {
+      const wall = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: origin, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }).formatToParts(instant).map((part) => [part.type, Number(part.value)]));
+      return { wall, ms: Date.UTC(wall.year, wall.month - 1, wall.day, wall.hour, wall.minute, wall.second) - Math.floor(instant.getTime() / 1000) * 1000 };
+    };
+    const today = offset(new Date()).wall;
+    const wanted = Date.UTC(today.year, today.month - 1, today.day, hours, minutes);
+    return show(new Date(wanted - offset(new Date(wanted - offset(new Date(wanted)).ms)).ms), match[5]);
+  }
+
+  function solve(source) {
+    const pair = source.toLowerCase().match(/^\s*(-?\d+(?:[.,]\d+)?)\s*([a-z/]+)\s+(?:in|to|as|=)\s+([a-z/]+)\s*$/);
+    if (pair) {
+      const amount = Number(pair[1].replace(',', '.'));
+      for (const table of Object.values(units)) {
+        if (table[pair[2]] && table[pair[3]]) return { value: `${format(amount * table[pair[2]] / table[pair[3]])} ${pair[3]}`, note: 'Unit conversion' };
+      }
+    }
+    const special = solveMoney(source) ?? solveBase(source) ?? solveZone(source) ?? solveUnix(source);
+    if (special) return special;
+    const date = solveDate(source);
+    if (date) return date;
+    const share = source.match(/^\s*(-?\d+(?:[.,]\d+)?)\s*%\s*of\s+(.+)$/i);
+    if (share) {
+      const base = evaluate(share[2]);
+      if (base !== null) return { value: format(Number(share[1].replace(',', '.')) / 100 * base), note: 'Percentage' };
+    }
+    if (/[-+*/^×÷(]|sqrt|sin|cos|tan|log|ln|\d\s*(?:k|thousand|million|bn|billion|trillion)\s*$/i.test(source)) {
+      const value = evaluate(source);
+      if (value !== null) return { value: format(value), note: 'Calculator' };
+    }
+    return null;
+  }
+
+  function fits(query, label, from = 0, inWord = false) {
+    if (!query) return true;
+    if (query[0] === ' ') {
+      const gap = label.indexOf(' ', from);
+      return gap >= 0 && fits(query.slice(1), label, gap + 1);
+    }
+    for (let index = from; index < label.length; index++) {
+      if (label[index] !== query[0]) continue;
+      const wordStart = index === 0 || label[index - 1] === ' ';
+      const sameWord = inWord && !label.slice(from, index).includes(' ');
+      if ((wordStart || sameWord) && fits(query.slice(1), label, index + 1, true)) return true;
+    }
+    return false;
+  }
+
+  function score(rawQuery, rawLabel) {
+    const query = rawQuery.trim().toLowerCase().replace(/\s+/g, ' ');
+    const label = rawLabel.toLowerCase();
+    if (!query) return 0;
+    if (label === query) return 4;
+    if (label.startsWith(query)) return 3;
+    if (label.includes(` ${query}`)) return 2;
+    return fits(query, label) ? 1 : 0;
+  }
+
+  const body = document.getElementById('demoBody');
+  const demo = document.getElementById('demoInput');
+  let selected = 0;
+  let matches = [];
+
+  function escapeText(text) {
+    const holder = document.createElement('span');
+    holder.textContent = text;
+    return holder.innerHTML;
+  }
+
+  const calc = document.getElementById('demoCalc');
+
+  function showHome() {
+    const chips = ['Translator', 'Emoji', 'Clipboard', 'Notes', 'Screenshot', 'Translate screen', 'Copy text from screen'];
+    body.innerHTML = `<div class="greeting">How can I help?</div><div class="chips">${chips.map((name) => `<button class="chip" type="button" data-try="${name}">${entries.find((entry) => entry.name === name).icon}<span>${name}</span></button>`).join('')}</div>`;
+  }
+
+  function glyph(entry) {
+    if (entry.tile) return `<span class="tile" style="background:${entry.tile}"><svg viewBox="0 0 24 24"><path d="${entry.path}"/></svg></span>`;
+    return `<span class="app-icon">${entry.icon}</span>`;
+  }
+
+  function showRows() {
+    body.innerHTML = `<ul class="results" role="listbox" aria-label="Results">${matches.map((entry, index) => `
+      <li class="app-row" role="option" data-index="${index}" aria-selected="${index === selected}">
+        ${glyph(entry)}
+        <span class="app-name">${escapeText(entry.name)}</span>
+        <span class="app-description">${escapeText(entry.hint ?? '')}</span>
+        <span class="app-kind">${entry.kind}</span>
+      </li>`).join('')}</ul>`;
+  }
+
+  function refresh() {
+    const query = demo.value;
+    const answer = query.trim() ? solve(query) : null;
+    calc.hidden = !answer;
+    calc.textContent = answer ? answer.value : '';
+    if (!query.trim() || answer) return showHome();
+    matches = entries
+      .filter((entry) => query.trim().length >= (entry.minLength ?? 2) || (query.trim().length === 1 && entry.kind === 'Command'))
+      .map((entry) => ({ entry, points: score(query, entry.name) }))
+      .filter((match) => match.points > 0)
+      .sort((first, second) => second.points - first.points || first.entry.name.length - second.entry.name.length)
+      .slice(0, 6)
+      .map((match) => match.entry);
+    if (matches.length === 0) return showHome();
+    selected = 0;
+    showRows();
+  }
+
+  demo.addEventListener('input', () => { stopAutoplay(); refresh(); });
+  demo.addEventListener('focus', stopAutoplay);
+  demo.addEventListener('keydown', (event) => {
+    if (!body.querySelector('.results')) return;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      selected = (selected + (event.key === 'ArrowDown' ? 1 : matches.length - 1)) % matches.length;
+      showRows();
+    }
+  });
+  body.addEventListener('click', (event) => {
+    const chip = event.target.closest('[data-try]');
+    if (chip) setQuery(chip.dataset.try);
+    const row = event.target.closest('li[data-index]');
+    if (row) { selected = Number(row.dataset.index); showRows(); }
+  });
+
+  function setQuery(text) {
+    stopAutoplay();
+    demo.value = text;
+    refresh();
+  }
+  document.querySelectorAll('.try [data-try]').forEach((button) => button.addEventListener('click', () => { setQuery(button.dataset.try); demo.focus(); }));
+
+  let autoplay = null;
+  function stopAutoplay() {
+    clearTimeout(autoplay);
+    autoplay = null;
+  }
+  function play(script, line, length) {
+    const text = script[line];
+    demo.value = text.slice(0, length);
+    refresh();
+    const finished = length === text.length;
+    autoplay = setTimeout(() => finished ? play(script, (line + 1) % script.length, 0) : play(script, line, length + 1), finished ? 2400 : 75);
+  }
+  demo.value = '24 km in miles';
+  refresh();
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    autoplay = setTimeout(() => play(['fi', '20% of 340', 'cb', '100 eur in usd', '130 days ago', '5pm pst in tokyo', '24 km in miles'], 0, 0), 2600);
+  }
+
+  function segmented(id, apply) {
+    const group = document.getElementById(id);
+    group.addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      group.querySelectorAll('button').forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
+      apply(button.dataset.value);
+    });
+  }
+  segmented('positionSeg', (value) => { document.getElementById('previewDesk').dataset.position = value; });
+  segmented('backgroundSeg', (value) => { document.getElementById('previewSheet').classList.toggle('solid', value === 'solid'); });
+  document.getElementById('grain').addEventListener('input', (event) => document.documentElement.style.setProperty('--grain', event.target.value));
+  document.getElementById('opacity').addEventListener('input', (event) => document.documentElement.style.setProperty('--sheet-opacity', event.target.value));
+  document.getElementById('swatches').addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    document.querySelectorAll('#swatches button').forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
+    document.documentElement.style.setProperty('--accent', button.dataset.accent);
+  });
+})();
+</script>
+</body>
+</html>
